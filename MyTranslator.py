@@ -1,5 +1,5 @@
 import pyscreenshot, cv2, sys, os
-import requests, googletrans
+import requests, googletrans #pip install googletrans==4.0.0-rc1
 from tkinter import *
 from tkinter import messagebox
 from pynput import keyboard
@@ -10,13 +10,13 @@ langs =googletrans.LANGUAGES
 short_langs, long_langs = list(langs.keys()), list(langs.values())
 inwindow, oldinfo =False, []
 
-extractseconds =60
+extractseconds =30
 
 def release_detection(key):
     if str(key)=="Key.ctrl_r":
         if keystokes and not keystokes[0]: keystokes.clear()
         keystokes.append(True)
-    elif str(key)=="Key.ctrl_l":
+    elif str(key)=="Key.alt_r":
         if keystokes and keystokes[0]: keystokes.clear()
         keystokes.append(False)
     else: keystokes.clear()
@@ -50,6 +50,7 @@ def mouse_crop(event, x, y, flags, param):
 def imageTotranslate(image_bytes, timeout, attempt):
     global inwindow
     text =imgdataTotextdata(image_bytes, timeout, attempt)
+    if not text: messagebox.showerror('Error', 'We cant Extract any Letter'); return
     if inwindow:
         oldinfo[0].focus_set()
         oldinfo[1].delete('1.0', 'end')
@@ -95,11 +96,11 @@ def imgdataTotextdata(imgdata, timeout, attempt):
         try:
             response =requests.post(url='https://blackboxapp.co/getsingleimage',
             files={'photo':('62d4ffe508808700315c9cd0.jpg', imgdata)}, timeout=timeout)
-        except requests.exceptions.ReadTimeout: break
+        except (requests.exceptions.ReadTimeout, requests.exceptions.ConnectionError): break
         text =response.json()
         if text=='Error': continue
         return text['text']
-    return '' 
+    return ''
 
 def translator(text, src, dest, openexteditor):
     text =translate(text, src, dest)
@@ -141,7 +142,7 @@ def openExternalEditor(text):
     else: os.system('open temp.txt')
 
 print('\nPress (right_ctrl) 4-5 times to Activate. ')
-print('Press (left_ctrl) 4-5 times to Deactivate. \n')
+print('Press (right_alt) 4-5 times to Deactivate. \n')
 while True:
     keystokes =[]
 
@@ -149,7 +150,9 @@ while True:
     klistener.start()
     klistener.join()
 
-    if not keystokes[0]: sys.exit(0)
+    if not keystokes[0]:
+        messagebox.showinfo('Information', 'Program Succefully End')
+        sys.exit(0)
 
     cropping, cropped = False, False
     x_start, y_start, x_end, y_end = 0, 0, 0, 0
